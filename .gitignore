@@ -29,6 +29,6 @@ backend/storage/*
 # Test coverage
 coverage/
 
-# Local temporary files
+# Temporary files
 tmp/
 temp/
