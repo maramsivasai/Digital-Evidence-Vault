@@ -5,6 +5,8 @@ import mongoose from "mongoose";
 import notFoundMiddleware from "./middleware/notFoundMiddleware.js";
 import errorMiddleware from "./middleware/errorMiddleware.js";
 
+import User from "./models/User.js";
+
 const app = express();
 
 // Allow requests from the React frontend
@@ -31,6 +33,16 @@ app.get("/api/health", (req, res) => {
         success: databaseConnected,
         server: "running",
         database: databaseConnected ? "connected" : "disconnected"
+    });
+});
+
+// User model test
+app.get("/api/test-user-model", (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: "User model loaded successfully",
+        collection: User.collection.name,
+        roles: User.schema.path("role").enumValues
     });
 });
 
