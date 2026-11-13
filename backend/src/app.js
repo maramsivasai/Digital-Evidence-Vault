@@ -4,23 +4,29 @@ import mongoose from "mongoose";
 
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import caseRoutes from "./routes/caseRoutes.js";
+import evidenceRoutes from "./routes/evidenceRoutes.js";
+
 import authMiddleware from "./middleware/authMiddleware.js";
 import authorizeRoles from "./middleware/roleMiddleware.js";
+
 import notFoundMiddleware from "./middleware/notFoundMiddleware.js";
 import errorMiddleware from "./middleware/errorMiddleware.js";
-import caseRoutes from "./routes/caseRoutes.js";
 
 const app = express();
 
-// 1. Middleware for incoming requests
-// Parse incoming request data
+// 1. General middleware
+app.use(cors({
+  origin: "http://localhost:5173"
+}));
+
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-// Public authentication routes
+// 2. Public authentication routes
 app.use("/api/auth", authRoutes);
 
-// Protected user-management routes
+// 3. Protected user-management routes
 app.use(
   "/api/users",
   authMiddleware,
@@ -28,32 +34,33 @@ app.use(
   userRoutes
 );
 
-// Protected case-management routes
+// 4. Case-management routes
+// Authentication and role authorization are handled inside caseRoutes.js
 app.use("/api/cases", caseRoutes);
 
-// 2. Basic API route
+// Evidence routes
+app.use("/api/evidence", evidenceRoutes);
+
+// 5. Root API route
 app.get("/", (req, res) => {
-    res.status(200).json({
-        success: true,
-        message: "Digital Evidence Vault API is running"
-    });
+  res.status(200).json({
+    success: true,
+    message: "Digital Evidence Vault API is running"
+  });
 });
 
-// 3. Database health check
+// 6. Database health check
 app.get("/api/health", (req, res) => {
-    const databaseConnected = mongoose.connection.readyState === 1;
+  const databaseConnected = mongoose.connection.readyState === 1;
 
-    res.status(databaseConnected ? 200 : 503).json({
-        success: databaseConnected,
-        server: "running",
-        database: databaseConnected ? "connected" : "disconnected"
-    });
+  res.status(databaseConnected ? 200 : 503).json({
+    success: databaseConnected,
+    server: "running",
+    database: databaseConnected ? "connected" : "disconnected"
+  });
 });
 
-// 4. Application routes
-app.use("/api/auth", authRoutes);
-
-// 5. Error handling
+// 7. Error handling
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
 

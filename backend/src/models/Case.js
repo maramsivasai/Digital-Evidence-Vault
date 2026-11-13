@@ -26,19 +26,6 @@ const caseSchema = new mongoose.Schema(
       type: String,
       required: true
     },
-
-    createdDate: {
-      type: Date,
-      default: Date.now,
-      required: true
-    },
-
-    updatedDate: {
-      type: Date,
-      default: Date.now,
-      required: true
-    },
-
     assignedTo: [
       {
         type: String,
