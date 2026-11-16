@@ -6,6 +6,8 @@ import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import caseRoutes from "./routes/caseRoutes.js";
 import evidenceRoutes from "./routes/evidenceRoutes.js";
+import custodyRoutes from "./routes/custodyRoutes.js";
+import auditRoutes from "./routes/auditRoutes.js";
 
 import authMiddleware from "./middleware/authMiddleware.js";
 import authorizeRoles from "./middleware/roleMiddleware.js";
@@ -37,9 +39,12 @@ app.use(
 // 4. Case-management routes
 // Authentication and role authorization are handled inside caseRoutes.js
 app.use("/api/cases", caseRoutes);
-
 // Evidence routes
 app.use("/api/evidence", evidenceRoutes);
+// Chain of Custody routes
+app.use("/api/custody", custodyRoutes);
+// Audit routes
+app.use("/api/audit", auditRoutes);
 
 // 5. Root API route
 app.get("/", (req, res) => {

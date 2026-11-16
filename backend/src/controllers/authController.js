@@ -1,7 +1,7 @@
-
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import { comparePassword } from "../utils/passwordUtils.js";
+import logAuditEvent from "../services/auditService.js";
 
 export const loginUser = async (req, res, next) => {
     try {
@@ -64,8 +64,16 @@ export const loginUser = async (req, res, next) => {
                 expiresIn: process.env.JWT_EXPIRES_IN || "1d"
             }
         );
-        console.log(token)
-        
+        // console.log(token)
+
+        await logAuditEvent({
+            actorUserId: user.userId,
+            eventType: "USER_LOGIN",
+            affectedRecordType: "User",
+            affectedRecordId: user.userId,
+            details: "User logged in successfully"
+        });
+
         // 7. Return successful login response
         return res.status(200).json({
             success: true,

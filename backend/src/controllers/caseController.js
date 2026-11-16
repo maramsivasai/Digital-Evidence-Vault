@@ -1,5 +1,6 @@
 import Case from "../models/Case.js";
 import User from "../models/User.js";
+import logAuditEvent from "../services/auditService.js";
 
 // POST /api/cases
 // Create a new case
@@ -25,6 +26,15 @@ export const createCase = async (req, res, next) => {
       status: "Open",
       createdBy: req.user.userId,
       assignedTo: []
+    });
+
+    await logAuditEvent({
+      actorUserId: req.user.userId,
+      eventType: "CASE_CREATED",
+      affectedRecordType: "Case",
+      affectedRecordId: newCase.caseId,
+      caseId: newCase.caseId,
+      details: "Case created successfully"
     });
 
     return res.status(201).json({
@@ -208,6 +218,15 @@ export const updateCase = async (req, res, next) => {
       });
     }
 
+    await logAuditEvent({
+      actorUserId: req.user.userId,
+      eventType: "CASE_UPDATED",
+      affectedRecordType: "Case",
+      affectedRecordId: updatedCase.caseId,
+      caseId: updatedCase.caseId,
+      details: "Case information updated"
+    });
+
     return res.status(200).json({
       success: true,
       message: "Case updated successfully",
@@ -259,6 +278,15 @@ export const assignCase = async (req, res, next) => {
         message: "Case not found"
       });
     }
+
+    await logAuditEvent({
+      actorUserId: req.user.userId,
+      eventType: "CASE_ASSIGNED",
+      affectedRecordType: "Case",
+      affectedRecordId: updatedCase.caseId,
+      caseId: updatedCase.caseId,
+      details: `User ${user.userId} assigned to case`
+    });
 
     return res.status(200).json({
       success: true,

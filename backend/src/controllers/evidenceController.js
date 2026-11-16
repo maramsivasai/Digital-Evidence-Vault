@@ -5,6 +5,7 @@ import { randomUUID } from "crypto";
 import Evidence from "../models/Evidence.js";
 import EvidenceMetadata from "../models/EvidenceMetadata.js";
 import Case from "../models/Case.js";
+import logAuditEvent from "../services/auditService.js";
 
 import {
   calculateSHA256,
@@ -29,7 +30,10 @@ export const uploadEvidence = async (req, res, next) => {
       });
     }
 
-    if (typeof caseId !== "string" || !caseId.trim()) {
+    if (
+      typeof caseId !== "string" ||
+      !caseId.trim()
+    ) {
       return res.status(400).json({
         success: false,
         message: "Case ID is required"
@@ -55,15 +59,12 @@ export const uploadEvidence = async (req, res, next) => {
     }
 
     const originalBuffer = req.file.buffer;
-
     const sha256Hash = calculateSHA256(originalBuffer);
-
     const encryptedBuffer = encryptEvidence(originalBuffer);
 
     await fs.mkdir(STORAGE_DIR, { recursive: true });
 
     const storageName = `${randomUUID()}.enc`;
-
     savedFilePath = path.join(STORAGE_DIR, storageName);
 
     await fs.writeFile(savedFilePath, encryptedBuffer, {
@@ -78,7 +79,7 @@ export const uploadEvidence = async (req, res, next) => {
     });
 
     await EvidenceMetadata.create({
-      evidenceId: evidence.evidenceId,
+      evidenceId: createdEvidence.evidenceId,
       originalFileName: path.basename(req.file.originalname),
       mimeType: req.file.mimetype || "application/octet-stream",
       fileSize: req.file.size,
@@ -86,32 +87,48 @@ export const uploadEvidence = async (req, res, next) => {
       uploadedBy: req.user.userId
     });
 
+    await logAuditEvent({
+      actorUserId: req.user.userId,
+      eventType: "EVIDENCE_UPLOADED",
+      affectedRecordType: "Evidence",
+      affectedRecordId: createdEvidence.evidenceId,
+      caseId: createdEvidence.caseId,
+      evidenceId: createdEvidence.evidenceId,
+      details: "Evidence file uploaded and stored successfully"
+    });
+
     return res.status(201).json({
       success: true,
       message: "Evidence uploaded and stored successfully",
       evidence: {
-        evidenceId: evidence.evidenceId,
-        caseId: evidence.caseId,
+        evidenceId: createdEvidence.evidenceId,
+        caseId: createdEvidence.caseId,
         originalFileName: path.basename(req.file.originalname),
-        sha256Hash: evidence.sha256Hash,
-        uploadedBy: evidence.uploadedBy,
-        createdAt: evidence.createdAt
+        sha256Hash: createdEvidence.sha256Hash,
+        uploadedBy: createdEvidence.uploadedBy,
+        createdAt: createdEvidence.createdAt
       }
     });
+
   } catch (error) {
     if (createdEvidence) {
+      await EvidenceMetadata.deleteOne({
+        evidenceId: createdEvidence.evidenceId
+      }).catch(() => {});
+
       await Evidence.deleteOne({
         evidenceId: createdEvidence.evidenceId
-      }).catch(() => { });
+      }).catch(() => {});
     }
 
     if (savedFilePath) {
-      await fs.unlink(savedFilePath).catch(() => { });
+      await fs.unlink(savedFilePath).catch(() => {});
     }
 
     next(error);
   }
 };
+
 
 // GET /api/evidence
 export const getEvidence = async (req, res, next) => {
@@ -234,6 +251,16 @@ export const downloadEvidence = async (req, res, next) => {
     const encryptedBuffer = await fs.readFile(filePath);
     const originalBuffer = decryptEvidence(encryptedBuffer);
 
+    await logAuditEvent({
+      actorUserId: req.user.userId,
+      eventType: "EVIDENCE_RETRIEVED",
+      affectedRecordType: "Evidence",
+      affectedRecordId: evidence.evidenceId,
+      caseId: evidence.caseId,
+      evidenceId: evidence.evidenceId,
+      details: "Evidence file retrieved successfully"
+    });
+
     res.setHeader(
       "Content-Type",
       metadata.mimeType
@@ -278,6 +305,18 @@ export const verifyEvidenceIntegrity = async (req, res, next) => {
     const currentHash = calculateSHA256(originalBuffer);
 
     const isIntegrityValid = currentHash === evidence.sha256Hash;
+
+    await logAuditEvent({
+      actorUserId: req.user.userId,
+      eventType: "EVIDENCE_INTEGRITY_VERIFIED",
+      affectedRecordType: "Evidence",
+      affectedRecordId: evidence.evidenceId,
+      caseId: evidence.caseId,
+      evidenceId: evidence.evidenceId,
+      details: isIntegrityValid
+        ? "Evidence integrity verification passed"
+        : "Evidence integrity verification failed"
+    });
 
     return res.status(200).json({
       success: true,
