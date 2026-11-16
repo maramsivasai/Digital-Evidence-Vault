@@ -8,6 +8,7 @@ import caseRoutes from "./routes/caseRoutes.js";
 import evidenceRoutes from "./routes/evidenceRoutes.js";
 import custodyRoutes from "./routes/custodyRoutes.js";
 import auditRoutes from "./routes/auditRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
 
 import authMiddleware from "./middleware/authMiddleware.js";
 import authorizeRoles from "./middleware/roleMiddleware.js";
@@ -45,6 +46,8 @@ app.use("/api/evidence", evidenceRoutes);
 app.use("/api/custody", custodyRoutes);
 // Audit routes
 app.use("/api/audit", auditRoutes);
+// Report routes
+app.use("/api/reports", reportRoutes);
 
 // 5. Root API route
 app.get("/", (req, res) => {
