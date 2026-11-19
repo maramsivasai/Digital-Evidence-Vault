@@ -1,31 +1,44 @@
-import { useEffect, useState } from "react";
-import api from "./services/api";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+
+import ProtectedRoute from "./components/ProtectedRoute";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import Cases from "./pages/Cases";
+import Evidence from "./pages/Evidence";
+import Custody from "./pages/Custody";
+import Users from "./pages/Users";
 
 function App() {
-    const [message, setMessage] = useState("Connecting to backend...");
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          {/* Public route */}
+          <Route path="/login" element={<Login />} />
 
-    useEffect(() => {
-        const testConnection = async () => {
-            try {
-                const response = await api.get("/api/test");
+          {/* Routes requiring authentication */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<Dashboard />} />
 
-                setMessage(response.data.message);
-            } catch (error) {
-                console.error("Backend connection failed:", error.message);
+            <Route path="/cases" element={<Cases />} />
+  
+            <Route path="/evidence" element={<Evidence />} />
 
-                setMessage("Unable to connect to backend");
-            }
-        };
+            <Route path="/custody" element={<Custody />} />
 
-        testConnection();
-    }, []);
+            <Route path="/users" element={<Users />} />
+          </Route>
 
-    return (
-        <div>
-            <h1>Digital Evidence Vault</h1>
-            <p>{message}</p>
-        </div>
-    );
+          {/* Default route */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+          {/* Unknown routes */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
+  );
 }
 
 export default App;
