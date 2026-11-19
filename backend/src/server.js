@@ -9,7 +9,7 @@ const startServer = async () => {
     try {
         await connectDB();
 
-        app.listen(PORT,HOST, () => {
+        app.listen(PORT,"0.0.0.0", () => {
             console.log(`Server running on http://${HOST}:${PORT}`);
         });
     } catch (error) {

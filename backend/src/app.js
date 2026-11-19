@@ -17,10 +17,20 @@ import notFoundMiddleware from "./middleware/notFoundMiddleware.js";
 import errorMiddleware from "./middleware/errorMiddleware.js";
 
 const app = express();
-
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174"
+];
 // 1. General middleware
 app.use(cors({
-  origin: "http://localhost:5173"
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error("Not allowed by CORS"));
+  },
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 app.use(express.json({ limit: "1mb" }));
